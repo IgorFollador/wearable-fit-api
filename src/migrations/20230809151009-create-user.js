@@ -23,9 +23,15 @@ module.exports = {
       password: {
         type: Sequelize.STRING
       },
+      sex: {
+        type: Sequelize.STRING(1)
+      },
+      birthDate: {
+        type: Sequelize.DATEONLY
+      },
       isProfessional: {
         type: Sequelize.BOOLEAN,
-        default: false
+        defaultValue: false
       },
       createdAt: {
         allowNull: false,
