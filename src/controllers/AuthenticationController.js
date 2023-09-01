@@ -4,6 +4,18 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 class AuthenticationController {
 
+    static async authorize (req, res, next) {
+        let token = req.headers.authorization;
+        if (!token) return res.sendStatus(401);
+        token = token.replace('Bearer ', '');
+        
+        jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
+            if(err) return res.sendStatus(401);
+            req.userId = payload.userId;
+            next();
+        })
+    }
+
     static async authenticate(req, res) {
         try {
             const selectedUser = await database.User.findOne({ where: { email: req.body.email } });
@@ -24,6 +36,14 @@ class AuthenticationController {
 
             return res.status(200).json(dataDTO);
 
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    static async callbackGoogle(req, res) {
+        try {
+            return res.status(200).json({ message: 'Success!'});
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
