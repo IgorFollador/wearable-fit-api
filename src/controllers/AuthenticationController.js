@@ -2,6 +2,7 @@ require('dotenv').config();
 const database = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const GoogleApi = require('../services/GoogleFitApi');
 class AuthenticationController {
 
     static async authorize (req, res, next) {
@@ -41,9 +42,27 @@ class AuthenticationController {
         }
     }
 
-    static async callbackGoogle(req, res) {
+    static async authorizateGoogleUser(req, res) {
         try {
-            return res.status(200).json({ message: 'Success!'});
+            const authUrl = await (new GoogleApi()).getAuthUrl();
+            return res.redirect(301, authUrl);
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    static async authCallback(req, res) {
+        try {
+            const googleApi = new GoogleApi();
+            const authorizationCode = req.query.code;
+            const tokens = await googleApi.getToken(authorizationCode)
+
+            googleApi.setTokens({
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token
+            });
+
+            return res.status(200).json(fitnessData);
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }

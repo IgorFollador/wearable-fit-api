@@ -2,10 +2,12 @@ const { google } = require('googleapis');
 
 class GoogleFitApi {
     constructor() {
+        this.fitness = google.fitness('v1');
+
         this.oAuthClient = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_CLIENT_SECRET,
-            'http://localhost:8000/google/auth'
+            `${process.env.HOST}/google/authCallback`
         );
 
         this.scopes = [
@@ -34,26 +36,45 @@ class GoogleFitApi {
         ];
     }
 
-    async authenticate() {
-        const authorizeUrl = this.oAuthClient.generateAuthUrl({
+    setTokens(tokens) {
+        this.oAuthClient.setCredentials({
+            access_token: tokens.accessToken,
+            refresh_token: tokens.refreshToken
+        });
+    }
+
+    async getAuthUrl() {
+        return this.oAuthClient.generateAuthUrl({
             access_type: 'offline',
             scope: this.scopes,
         });
-
-        return authorizeUrl;
     }
 
     async getToken(code) {
         const { tokens } = await this.oAuthClient.getToken(code);
         this.oAuthClient.setCredentials(tokens);
+        return tokens;
     }
 
     async getFitnessData() {
-        const fitness = google.fitness('v1');
-        const response = await fitness.users.dataSources.list({
+        console.log(this.oAuthClient);
+        const response = await this.fitness.users.dataSources.list({
             userId: 'me',
+            auth: this.oAuthClient
         });
 
         return response.data;
     }
+
+    async getFitnessDataByDataSourceId(dataSourceId) {
+        const response = await this.fitness.users.dataSources.get({
+            userId: 'me',
+            dataSourceId: dataSourceId,
+            auth: this.oAuthClient
+        });
+
+        return response;
+    }
 }
+
+module.exports = GoogleFitApi;
