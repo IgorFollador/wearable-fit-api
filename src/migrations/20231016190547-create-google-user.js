@@ -24,7 +24,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       scope: {
-        type: Sequelize.STRING
+        type: Sequelize.TEXT('long')
       },
       tokenType: {
         type: Sequelize.STRING

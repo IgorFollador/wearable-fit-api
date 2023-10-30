@@ -2,7 +2,8 @@ require('dotenv').config();
 const database = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const GoogleApi = require('../services/GoogleFitApi');
+const GoogleFitApi = require('../services/GoogleFitApi');
+const Dates = require('../services/Dates');
 class AuthenticationController {
 
     static async authorize (req, res, next) {
@@ -44,7 +45,7 @@ class AuthenticationController {
 
     static async authorizateGoogleUser(req, res) {
         try {
-            const authUrl = await (new GoogleApi()).getAuthUrl();
+            const authUrl = await (new GoogleFitApi()).getAuthUrl();
             return res.redirect(301, authUrl);
         } catch (error) {
             return res.status(500).json({ message: error.message });
@@ -53,16 +54,29 @@ class AuthenticationController {
 
     static async authCallback(req, res) {
         try {
-            const googleApi = new GoogleApi();
+            const googleFitApi = new GoogleFitApi();
             const authorizationCode = req.query.code;
-            const tokens = await googleApi.getToken(authorizationCode)
+            const tokens = await googleFitApi.getToken(authorizationCode)
 
-            googleApi.setTokens({
+            googleFitApi.setTokens({
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token
             });
 
-            return res.status(200).json(fitnessData);
+            console.log(tokens)
+
+            // Save tokens into database
+            // TODO: save tokens to user logged
+            const googleUser = await database.GoogleUser.create({
+                userId: 1,
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token,
+                scope: tokens.scope,
+                tokentType: tokens.token_type,
+                expiryDate: Dates.formatTimestampForMySQL(tokens.expiry_date)
+            });
+
+            return res.status(200).json(googleUser);
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }

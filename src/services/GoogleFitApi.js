@@ -2,6 +2,7 @@ const { google } = require('googleapis');
 
 class GoogleFitApi {
     constructor() {
+        this.user = google.user('v1');
         this.fitness = google.fitness('v1');
 
         this.oAuthClient = new google.auth.OAuth2(
@@ -11,6 +12,9 @@ class GoogleFitApi {
         );
 
         this.scopes = [
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/openid',
             'https://www.googleapis.com/auth/fitness.activity.read',
             'https://www.googleapis.com/auth/fitness.activity.write',
             'https://www.googleapis.com/auth/fitness.blood_glucose.read',
@@ -56,8 +60,16 @@ class GoogleFitApi {
         return tokens;
     }
 
+    async getUserData() {
+        const response = await this.fitness.users.dataSources.list({
+            userId: 'me',
+            auth: this.oAuthClient
+        });
+
+        return response.data;
+    }
+
     async getFitnessData() {
-        console.log(this.oAuthClient);
         const response = await this.fitness.users.dataSources.list({
             userId: 'me',
             auth: this.oAuthClient

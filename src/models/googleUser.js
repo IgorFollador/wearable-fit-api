@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
   GoogleUser.init({
     accessToken: DataTypes.STRING,
     refreshToken: DataTypes.STRING,
-    scope: DataTypes.STRING,
+    scope: DataTypes.TEXT('long'),
     tokenType: DataTypes.STRING,
     expiryDate: DataTypes.DATE
   }, {
