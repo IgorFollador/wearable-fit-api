@@ -7,6 +7,6 @@ router.get('/notifications', NotificationController.read);
 
 router.post('/notifications', NotificationController.create);
 
-// router.put('/notifications/:id', NotificationController.readNotification);
+router.put('/notifications/:id', NotificationController.update);
 
 module.exports = router;
