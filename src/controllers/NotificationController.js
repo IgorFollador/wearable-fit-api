@@ -36,7 +36,6 @@ class NotificationController {
     static async update(req, res) {
         try {
             const notificationId = req.params.id;
-            const userId = req.userId;
             const notificationForm = req.body;
 
             if (notificationForm == null) return res.status(422).json({ message: 'Data not found' });

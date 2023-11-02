@@ -4,6 +4,7 @@ const { Router } = require('express');
 const publicRouter = require('./publicRoutes');
 const usersRouter = require('./usersRoute');
 const notificationsRouter = require('./notificationsRoute');
+const healthGoalsRouter = require('./healthGoalsRoute');
 
 const AuthenticationController = require('../controllers/AuthenticationController');
 
@@ -19,5 +20,7 @@ v1.use(AuthenticationController.authorize)
 v1.use(usersRouter);
 
 v1.use(notificationsRouter);
+
+v1.use(healthGoalsRouter);
 
 module.exports = v1;

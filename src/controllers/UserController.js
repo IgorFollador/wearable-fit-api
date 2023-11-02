@@ -67,15 +67,13 @@ class UserController {
             const user = await database.User.findByPk(userId);
             if(user == null) return res.status(404).json({ message: 'User not found' });
 
-            if (userForm.password) delete userForm.password;
-
             await database.User.update(userForm, {
                 where: {
                     id: Number(userId)
                 }
             })
             
-            return res.status(200).json({ message: `User with ID ${userId} updated` });
+            return res.status(200).json({ message: `User with ID ${userId} has been updated` });
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
@@ -94,7 +92,7 @@ class UserController {
                 }
             });
 
-            return res.status(200).json({ message: `User with ID ${id} deleted` });
+            return res.status(200).json({ message: `User with ID ${id} has been deleted` });
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
@@ -113,7 +111,7 @@ class UserController {
                 }
             });
 
-            return res.status(200).json({ message: `User with ID ${id} recovered` });
+            return res.status(200).json({ message: `User with ID ${id} has been recovered` });
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
