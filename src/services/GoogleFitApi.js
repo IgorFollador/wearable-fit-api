@@ -2,7 +2,7 @@ const { google } = require('googleapis');
 
 class GoogleFitApi {
     constructor() {
-        this.user = google.user('v1');
+        // this.user = google.user('v1');
         this.fitness = google.fitness('v1');
 
         this.oAuthClient = new google.auth.OAuth2(
@@ -86,6 +86,126 @@ class GoogleFitApi {
         });
 
         return response;
+    }
+
+    async fetchDataByDataType(dataTypeName, date) {
+        // Ajuste a data para o início do dia.
+        date.setHours(0, 0, 0, 0);
+
+        const request = {
+            userId: 'me',
+            auth: this.oAuthClient,
+            resource: {
+                aggregateBy: [{ dataTypeName }],
+                bucketByTime: { durationMillis: 86400000 }, // Agrupe por dia (24 horas)
+                startTimeMillis: date.getTime(),
+                endTimeMillis: date.getTime() + 86400000 // Fim do mesmo dia
+            }
+        };
+
+        try {
+            const response = await this.fitness.users.dataset.aggregate(request);
+            if (response.data && response.data.bucket && response.data.bucket.length > 0) {
+                const data = response.data.bucket[0].dataset[0];
+                if (data && data.point && data.point.length > 0) {
+                    return data.point;
+                }
+            }
+            return [];
+        } catch (error) {
+            console.error(`Erro ao recuperar dados de ${dataTypeName}:`, error);
+            throw error;
+        }
+    }
+
+    async getDailyStepCount(date) {
+        const dataTypeName = 'com.google.step_count.delta';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        return dataPoints.reduce((total, point) => total + point.value[0].intVal, 0);
+    }
+
+    async getDailyCaloriesBurned(date) {
+        const dataTypeName = 'com.google.calories.expended';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        return dataPoints.reduce((total, point) => total + point.value[0].fpVal, 0);
+    }
+
+    async getDailySleepDuration(date) {
+        const dataTypeName = 'com.google.activity.segment';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        let totalSleepDuration = 0;
+
+        for (const point of dataPoints) {
+            if (point.value[0].intVal === 72) {
+                totalSleepDuration += point.endTimeNanos - point.startTimeNanos;
+            }
+        }
+
+        // Converta a duração do sono para horas.
+        const hours = totalSleepDuration / (1000 * 60 * 60);
+        return hours;
+    }
+
+    async getDailyPhysicalActivityDuration(date) {
+        const dataTypeName = 'com.google.activity.segment';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        let totalActivityDuration = 0;
+
+        for (const point of dataPoints) {
+            if (point.value[0].intVal === 7) {
+                totalActivityDuration += point.endTimeNanos - point.startTimeNanos;
+            }
+        }
+
+        // Converta a duração da atividade física para minutos.
+        const minutes = totalActivityDuration / (1000 * 60);
+        return minutes;
+    }
+
+    async getDailyHeartRate(date) {
+        const dataTypeName = 'com.google.heart_rate.bpm';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        return dataPoints.map(point => ({
+            timestamp: new Date(point.startTimeNanos / 1000000),
+            heartRate: point.value[0].fpVal,
+        }));
+    }
+
+    async getDailyBloodPressure(date) {
+        const dataTypeName = 'com.google.blood_pressure';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        return dataPoints.map(point => ({
+            timestamp: new Date(point.startTimeNanos / 1000000),
+            systolic: point.value[0].fpVal,
+            diastolic: point.value[1].fpVal,
+        }));
+    }
+
+    async getDailyBloodGlucose(date) {
+        const dataTypeName = 'com.google.blood_glucose';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        return dataPoints.map(point => ({
+            timestamp: new Date(point.startTimeNanos / 1000000),
+            glucoseLevel: point.value[0].fpVal,
+        }));
+    }
+
+    async getDailyBodyTemperature(date) {
+        const dataTypeName = 'com.google.body.temperature';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        return dataPoints.map(point => ({
+            timestamp: new Date(point.startTimeNanos / 1000000),
+            bodyTemperature: point.value[0].fpVal,
+        }));
+    }
+
+    async getDailyOxygenSaturation(date) {
+        const dataTypeName = 'com.google.oxygen_saturation';
+        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
+        return dataPoints.map(point => ({
+            timestamp: new Date(point.startTimeNanos / 1000000),
+            oxygenSaturation: point.value[0].fpVal,
+        }));
     }
 }
 
