@@ -5,9 +5,13 @@ const router = Router();
 
 router.get('/users', UserController.read);
 
+router.get('/users/clients', UserController.readAllClientsByProfessional);
+
 router.put('/users', UserController.update);
 
-router.put('/users/recover/:id', UserController.recover)
+router.put('/users/associate/client/:id', UserController.associateClientToProfessional);
+
+router.put('/users/recover/:id', UserController.recover);
 
 router.delete('/users/:id', UserController.delete);
 

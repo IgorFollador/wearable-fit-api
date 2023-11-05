@@ -5,6 +5,7 @@ const publicRouter = require('./publicRoutes');
 const usersRouter = require('./usersRoute');
 const notificationsRouter = require('./notificationsRoute');
 const healthGoalsRouter = require('./healthGoalsRoute');
+const healthInformationRouter = require('./healthInformationRoute');
 
 const AuthenticationController = require('../controllers/AuthenticationController');
 
@@ -22,5 +23,7 @@ v1.use(usersRouter);
 v1.use(notificationsRouter);
 
 v1.use(healthGoalsRouter);
+
+v1.use(healthInformationRouter);
 
 module.exports = v1;

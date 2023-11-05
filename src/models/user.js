@@ -11,6 +11,11 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       User.hasOne(models.GoogleUser);
+      User.belongsTo(models.User, {
+        as: 'Professional',
+        foreignKey: 'professionalId',
+        onDelete: 'SET NULL'
+      })
     }
   }
   User.init({

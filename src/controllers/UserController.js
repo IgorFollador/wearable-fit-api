@@ -55,6 +55,32 @@ class UserController {
         }
     }
 
+    static async readAllClientsByProfessional(req, res) {
+        try {
+            const professionalId = req.userId;
+            if (!professionalId) return res.sendStatus(401);
+
+            const user = await database.User.findByPk(professionalId, {exclude: ['password']});
+            if(user == null) return res.status(404).json({ message: 'User not found' });
+            
+            // Only professionals have access to yout clients
+            if(!user.isProfessional) return res.status(401).json({ message: 'The logged in user does not have permission to access this feature' });
+
+            const clients = await database.User.findAll({
+                where: {
+                    professionalId: professionalId
+                },
+                attributes: {
+                    exclude: ['password', 'isProfessional', 'deletedAt']
+                }
+            });
+
+            return res.status(200).json(clients);
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
     static async update(req, res) {
         try {
             delete req.body.password;
@@ -74,6 +100,32 @@ class UserController {
             })
             
             return res.status(200).json({ message: `User with ID ${userId} has been updated` });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    static async associateClientToProfessional(req, res) {
+        try {
+            const professionalId = req.userId;
+            const clientId = req.params.id;
+
+            const user = await database.User.findByPk(professionalId, {exclude: ['password']});
+            if(user == null) return res.status(404).json({ message: 'Professional not found' });
+            
+            // Only professionals have access to yout clients
+            if(!user.isProfessional) return res.status(401).json({ message: 'The logged in user does not have permission to access this feature' });
+
+            const client = await database.User.findByPk(clientId, {exclude: ['password']});
+            if(client == null) return res.status(404).json({ message: 'User not found' });
+
+            await database.User.update({professionalId: professionalId}, {
+                where: {
+                    id: Number(clientId)
+                }
+            })
+
+            return res.status(200).json({ message: `User with ID ${clientId} associate to professional with ID ${professionalId}` })
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }

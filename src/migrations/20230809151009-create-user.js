@@ -9,6 +9,14 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      professionalId: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
+        references: { 
+          model: 'Users', 
+          key: 'id' 
+        }
+      },
       firstName: {
         type: Sequelize.STRING
       },
