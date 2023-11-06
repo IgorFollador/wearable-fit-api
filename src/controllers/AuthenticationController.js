@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const GoogleFitApi = require('../services/GoogleFitApi');
 const Dates = require('../services/Dates');
-class AuthenticationController {
+ class AuthenticationController {
 
     static async authorize (req, res, next) {
         let token = req.headers.authorization;
@@ -45,7 +45,7 @@ class AuthenticationController {
 
     static async authorizateGoogleUser(req, res) {
         try {
-            const authUrl = await (new GoogleFitApi()).getAuthUrl();
+            const authUrl = await (new GoogleFitApi()).getAuthUrl(req.userId);
             return res.redirect(301, authUrl);
         } catch (error) {
             return res.status(500).json({ message: error.message });
@@ -57,13 +57,10 @@ class AuthenticationController {
             const googleFitApi = new GoogleFitApi();
             const authorizationCode = req.query.code;
             const tokens = await googleFitApi.getToken(authorizationCode)
-
             googleFitApi.setTokens({
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token
             });
-
-            console.log(tokens)
 
             // Save tokens into database
             // TODO: save tokens to user logged

@@ -2,7 +2,6 @@ const { google } = require('googleapis');
 
 class GoogleFitApi {
     constructor() {
-        // this.user = google.user('v1');
         this.fitness = google.fitness('v1');
 
         this.oAuthClient = new google.auth.OAuth2(
@@ -12,9 +11,6 @@ class GoogleFitApi {
         );
 
         this.scopes = [
-            'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'https://www.googleapis.com/openid',
             'https://www.googleapis.com/auth/fitness.activity.read',
             'https://www.googleapis.com/auth/fitness.activity.write',
             'https://www.googleapis.com/auth/fitness.blood_glucose.read',
@@ -50,7 +46,7 @@ class GoogleFitApi {
     async getAuthUrl() {
         return this.oAuthClient.generateAuthUrl({
             access_type: 'offline',
-            scope: this.scopes,
+            scope: this.scopes
         });
     }
 
@@ -206,6 +202,30 @@ class GoogleFitApi {
             timestamp: new Date(point.startTimeNanos / 1000000),
             oxygenSaturation: point.value[0].fpVal,
         }));
+    }
+
+    async getHealthSummaryByDay(startDate, endDate) {
+        const healthSummaryByDay = [];
+    
+        const currentDate = new Date(startDate);
+    
+        while (currentDate <= endDate) {
+            const date = new Date(currentDate);
+            const dailySummary = {
+                date: date,
+                stepCount: await this.getDailyStepCount(date),
+                caloriesBurned: await this.getDailyCaloriesBurned(date),
+                sleepDuration: await this.getDailySleepDuration(date),
+                physicalActivityDuration: await this.getDailyPhysicalActivityDuration(date),
+                heartRate: await this.getDailyHeartRate(date)
+            };
+    
+            healthSummaryByDay.push(dailySummary);
+    
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    
+        return healthSummaryByDay;
     }
 }
 
