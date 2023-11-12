@@ -17,6 +17,35 @@ class Dates {
         return year  + ("0" + month).slice(-2) + ("0" + day).slice(-2);
     }
 
+    static formatDateToDMYWithTime(date, div = true) {
+        const formattedDate = new Date(date);
+        
+        const year  = formattedDate.getFullYear();
+        const month  = ("0" + (formattedDate.getMonth() + 1)).slice(-2);
+        const day  = ("0" + formattedDate.getDate()).slice(-2);
+        
+        const hours = ("0" + formattedDate.getHours()).slice(-2);
+        const minutes = ("0" + formattedDate.getMinutes()).slice(-2);
+        const seconds = ("0" + formattedDate.getSeconds()).slice(-2);
+    
+        if (div) {
+            return (
+                ("0" + day).slice(-2) + '/' +
+                ("0" + month).slice(-2) + '/' +
+                year +
+                ` ${hours}:${minutes}:${seconds}`
+            );
+        }
+    
+        return (
+            year +
+            ("0" + month).slice(-2) +
+            ("0" + day).slice(-2) +
+            ` ${hours}:${minutes}:${seconds}`
+        );
+    }
+    
+
     static prettyDate(date) {
         let today = new Date();
         if (today.getFullYear() == date.getFullYear()) {

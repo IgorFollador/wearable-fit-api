@@ -1,6 +1,7 @@
 const database = require('../models');
 const bcrypt = require('bcrypt');
 const userSchema = require('../services/validations/userSchema');
+const dates = require('../services/Dates');
 
 class UserController {
 
@@ -28,6 +29,27 @@ class UserController {
             }
 
             return res.status(201).json(userDTO);
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    static async recoverUser(req, res) {
+        try {
+            // userId by auth
+            const userId = req.userId;
+            if (!userId) return res.sendStatus(401);
+
+            const user = await database.User.findByPk(userId, {exclude: ['password']});
+            if(user == null) return res.status(404).json({ message: 'User not found' });
+
+            const responseData = {
+                userName: `${user.firstName} ${user.lastName}`,
+                email: user.email,
+                isProfessional: user.isProfessional 
+            }
+
+            return res.status(200).json(responseData);
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
@@ -71,11 +93,25 @@ class UserController {
                     professionalId: professionalId
                 },
                 attributes: {
-                    exclude: ['password', 'isProfessional', 'deletedAt']
-                }
+                    exclude: ['password', 'isProfessional']
+                },
+                raw: true,
+                nest: true
             });
 
-            return res.status(200).json(clients);
+
+            let clientsDTO = [];
+
+            clients.forEach(client => {
+                clientsDTO.push({
+                    'id': client.id,
+                    'name': `${client.firstName} ${client.lastName}`,
+                    'status': !client.deletedAt ? 'Ativo' : 'Inativo',
+                    'lastUpdate': dates.formatDateToDMYWithTime(new Date(client.updatedAt))
+                }); 
+            });
+
+            return res.status(200).json(clientsDTO);
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }

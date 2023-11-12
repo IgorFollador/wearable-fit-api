@@ -33,6 +33,7 @@ const Dates = require('../services/Dates');
             const dataDTO = {
                 token: token,
                 userName: `${selectedUser.firstName} ${selectedUser.lastName}`,
+                email: selectedUser.email,
                 isProfessional: selectedUser.isProfessional 
             };
 
