@@ -127,35 +127,60 @@ class GoogleFitApi {
     }
 
     async getDailySleepDuration(date) {
-        const dataTypeName = 'com.google.activity.segment';
-        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        let totalSleepDuration = 0;
+        // Necessário setar um horario especifico para abranger a maior parte dos dados de sono
+        const startDateTime = new Date(date);
+        startDateTime.setHours(18, 0, 0, 0); // 18h do dia anterior
+        startDateTime.setDate(startDateTime.getDate() - 1);
 
-        for (const point of dataPoints) {
-            if (point.value[0].intVal === 72) {
-                totalSleepDuration += point.endTimeNanos - point.startTimeNanos;
+        const endDateTime = new Date(date);
+        endDateTime.setHours(18, 0, 0, 0); // 18h do dia solicitado
+
+        const request = {
+            userId: 'me',
+            auth: this.oAuthClient,
+            resource: {
+                aggregateBy: [{ dataTypeName: 'com.google.activity.segment' }],
+                bucketByTime: { durationMillis: 86400000 }, // Agrupe por 24 horas
+                startTimeMillis: startDateTime.getTime(),
+                endTimeMillis: endDateTime.getTime()
             }
-        }
+        };
 
-        // Converta a duração do sono para horas.
-        const hours = totalSleepDuration / (1000 * 60 * 60);
-        return hours;
+        try {
+            const response = await this.fitness.users.dataset.aggregate(request);
+            let totalSleepDuration = 0;
+            if (response.data && response.data.bucket && response.data.bucket.length > 0) {
+                const sleepData = response.data.bucket[0].dataset[0].point;
+                sleepData.forEach((point) => {
+                    if (point.value[0].intVal === 72) { // 72 é o identificador para sono
+                        totalSleepDuration += (point.endTimeNanos - point.startTimeNanos) / (1e9 * 3600); // Convertendo de nanossegundos para horas
+                    }
+                });
+            }
+            return totalSleepDuration;
+        } catch (error) {
+            console.error(`Erro ao recuperar dados de sono:`, error);
+            throw error;
+        }
     }
 
     async getDailyPhysicalActivityDuration(date) {
         const dataTypeName = 'com.google.activity.segment';
         const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        let totalActivityDuration = 0;
+        let activities = {};
 
         for (const point of dataPoints) {
-            if (point.value[0].intVal === 7) {
-                totalActivityDuration += point.endTimeNanos - point.startTimeNanos;
+            const activityType = point.value[0].intVal;
+            const duration = (point.endTimeNanos - point.startTimeNanos)  / 1e9 / 60; // Convertendo para minutos
+
+            if (activities[activityType]) {
+                activities[activityType].duration += duration;
+            } else {
+                activities[activityType] = { duration, name: this.getActivityName(activityType) };
             }
         }
 
-        // Converta a duração da atividade física para minutos.
-        const minutes = totalActivityDuration / (1000 * 60);
-        return minutes;
+        return activities;
     }
 
     async getDailyHeartRate(date) {
@@ -167,66 +192,65 @@ class GoogleFitApi {
         }));
     }
 
-    async getDailyBloodPressure(date) {
-        const dataTypeName = 'com.google.blood_pressure';
-        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        return dataPoints.map(point => ({
-            timestamp: new Date(point.startTimeNanos / 1000000),
-            systolic: point.value[0].fpVal,
-            diastolic: point.value[1].fpVal,
-        }));
-    }
-
-    async getDailyBloodGlucose(date) {
-        const dataTypeName = 'com.google.blood_glucose';
-        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        return dataPoints.map(point => ({
-            timestamp: new Date(point.startTimeNanos / 1000000),
-            glucoseLevel: point.value[0].fpVal,
-        }));
-    }
-
-    async getDailyBodyTemperature(date) {
-        const dataTypeName = 'com.google.body.temperature';
-        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        return dataPoints.map(point => ({
-            timestamp: new Date(point.startTimeNanos / 1000000),
-            bodyTemperature: point.value[0].fpVal,
-        }));
-    }
-
-    async getDailyOxygenSaturation(date) {
-        const dataTypeName = 'com.google.oxygen_saturation';
-        const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        return dataPoints.map(point => ({
-            timestamp: new Date(point.startTimeNanos / 1000000),
-            oxygenSaturation: point.value[0].fpVal,
-        }));
-    }
-
-    async getHealthSummaryByDay(startDate, endDate) {
-        const healthSummaryByDay = [];
-    
-        const currentDate = new Date(startDate);
-    
-        while (currentDate <= endDate) {
-            const date = new Date(currentDate);
-            const dailySummary = {
-                date: date,
-                stepCount: await this.getDailyStepCount(date),
-                caloriesBurned: await this.getDailyCaloriesBurned(date),
-                sleepDuration: await this.getDailySleepDuration(date),
-                physicalActivityDuration: await this.getDailyPhysicalActivityDuration(date),
-                heartRate: await this.getDailyHeartRate(date)
-            };
-    
-            healthSummaryByDay.push(dailySummary);
-    
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-    
-        return healthSummaryByDay;
-    }
+    getActivityName(activityType) {
+        const activityMap = {
+          0: 'No atividade',
+          1: 'Andar de bicicleta',
+          2: 'Andar',
+          3: 'Parado (não se movendo)',
+          4: 'Desconhecido (não foi possível detectar atividade)',
+          7: 'Caminhada',
+          8: 'Corrida',
+          9: 'Aeróbica',
+          10: 'Badminton',
+          11: 'Beisebol',
+          12: 'Basquete',
+          13: 'Biatlo',
+          14: 'Handebol',
+          15: 'Pilates',
+          16: 'Esqui cross-country',
+          17: 'Curling',
+          18: 'Dança',
+          19: 'Esgrima',
+          20: 'Futebol Americano',
+          21: 'Frisbee',
+          22: 'Jardinagem',
+          23: 'Golfe',
+          24: 'Ginástica',
+          25: 'Escalada em rocha',
+          26: 'Hóquei',
+          27: 'Equitação',
+          28: 'Artes marciais',
+          29: 'Meditação',
+          30: 'Artes marciais mistas',
+          31: 'Pular corda',
+          32: 'Remo',
+          33: 'Rugby',
+          34: 'Jogging',
+          35: 'Natação',
+          36: 'Tênis de mesa',
+          37: 'Tênis',
+          38: 'Treinamento de força',
+          39: 'Esqui',
+          40: 'Snowboard',
+          41: 'Squash',
+          42: 'Stair climbing',
+          43: 'Stand-up paddleboarding',
+          44: 'Surf',
+          45: 'Natação sincronizada',
+          46: 'Tae kwon do',
+          47: 'Tai chi',
+          48: 'Futebol',
+          49: 'Voleibol',
+          50: 'Polo aquático',
+          51: 'Weightlifting',
+          52: 'Yoga',
+          53: 'Zumba',
+          /// 
+        };
+      
+        return activityMap[activityType] || 'Outra Atividade';
+      }
 }
 
 module.exports = GoogleFitApi;

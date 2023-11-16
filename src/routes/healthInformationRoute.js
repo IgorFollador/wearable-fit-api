@@ -3,6 +3,14 @@ const HealthInformationController = require('../controllers/HealthInformationCon
 
 const router = Router();
 
-router.get('/healthInformation/weakly', HealthInformationController.readWeaklyHealthDataByUserId);
+router.get('/health/steps/:date', HealthInformationController.readStepsByDate);
+
+router.get('/health/calories/:date', HealthInformationController.readCaloriesByDate);
+
+router.get('/health/sleep/:date', HealthInformationController.readSleepByDate);
+
+router.get('/health/activity/:date', HealthInformationController.readActivityByDate);
+
+router.get('/health/heart-rate/:date', HealthInformationController.readHeartRateByDate);
 
 module.exports = router;
