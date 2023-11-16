@@ -87,27 +87,33 @@ class GoogleFitApi {
     async fetchDataByDataType(dataTypeName, date) {
         // Ajuste a data para o início do dia.
         date.setHours(0, 0, 0, 0);
-
+    
         const request = {
             userId: 'me',
             auth: this.oAuthClient,
             resource: {
                 aggregateBy: [{ dataTypeName }],
-                bucketByTime: { durationMillis: 86400000 }, // Agrupe por dia (24 horas)
+                bucketByTime: { durationMillis: 1800000 }, // Agrupe por 30 minutos
                 startTimeMillis: date.getTime(),
                 endTimeMillis: date.getTime() + 86400000 // Fim do mesmo dia
             }
         };
-
+    
         try {
             const response = await this.fitness.users.dataset.aggregate(request);
-            if (response.data && response.data.bucket && response.data.bucket.length > 0) {
-                const data = response.data.bucket[0].dataset[0];
-                if (data && data.point && data.point.length > 0) {
-                    return data.point;
-                }
+            const dataPoints = [];
+    
+            if (response.data && response.data.bucket) {
+                response.data.bucket.forEach(bucket => {
+                    if (bucket.dataset[0].point) {
+                        bucket.dataset[0].point.forEach(point => {
+                            dataPoints.push(point);
+                        });
+                    }
+                });
             }
-            return [];
+    
+            return dataPoints;
         } catch (error) {
             console.error(`Erro ao recuperar dados de ${dataTypeName}:`, error);
             throw error;
@@ -118,7 +124,7 @@ class GoogleFitApi {
         const dataTypeName = 'com.google.step_count.delta';
         const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
         return dataPoints.reduce((total, point) => total + point.value[0].intVal, 0);
-    }
+    }    
 
     async getDailyCaloriesBurned(date) {
         const dataTypeName = 'com.google.calories.expended';
@@ -126,14 +132,18 @@ class GoogleFitApi {
         return dataPoints.reduce((total, point) => total + point.value[0].fpVal, 0);
     }
 
+    // TODO: Rever retorno
     async getDailySleepDuration(date) {
-        // Necessário setar um horario especifico para abranger a maior parte dos dados de sono
-        const startDateTime = new Date(date);
-        startDateTime.setHours(18, 0, 0, 0); // 18h do dia anterior
-        startDateTime.setDate(startDateTime.getDate() - 1);
+        const localDate = new Date(date);
+        localDate.setHours(0, 0, 0, 0);
 
-        const endDateTime = new Date(date);
-        endDateTime.setHours(18, 0, 0, 0); // 18h do dia solicitado
+        // Início do intervalo de sono (18h do dia anterior)
+        const startDateTime = new Date(localDate);
+        startDateTime.setHours(-6, 0, 0, 0); // Retrocede 6 horas
+
+        // Fim do intervalo de sono (18h do dia solicitado)
+        const endDateTime = new Date(localDate);
+        endDateTime.setHours(18, 0, 0, 0); // Avança para 18h
 
         const request = {
             userId: 'me',
@@ -149,10 +159,13 @@ class GoogleFitApi {
         try {
             const response = await this.fitness.users.dataset.aggregate(request);
             let totalSleepDuration = 0;
+    
             if (response.data && response.data.bucket && response.data.bucket.length > 0) {
-                const sleepData = response.data.bucket[0].dataset[0].point;
-                sleepData.forEach((point) => {
-                    if (point.value[0].intVal === 72) { // 72 é o identificador para sono
+                const sleepDataPoints = response.data.bucket[0].dataset[0].point;
+                sleepDataPoints.forEach((point) => {
+
+                    // Procurando por códigos de atividade de sono (72 ou 109)
+                    if (point.value.some(val => val.intVal === 72 || val.intVal === 109)) {
                         totalSleepDuration += (point.endTimeNanos - point.startTimeNanos) / (1e9 * 3600); // Convertendo de nanossegundos para horas
                     }
                 });
@@ -186,10 +199,35 @@ class GoogleFitApi {
     async getDailyHeartRate(date) {
         const dataTypeName = 'com.google.heart_rate.bpm';
         const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        return dataPoints.map(point => ({
-            timestamp: new Date(point.startTimeNanos / 1000000),
-            heartRate: point.value[0].fpVal,
-        }));
+        
+        const heartRates = {};
+        for (let hour = 0; hour < 24; hour++) {
+            for (let minute = 0; minute < 60; minute += 30) {
+                const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                heartRates[timeKey] = [];
+            }
+        }
+        
+        dataPoints.forEach(point => {
+            const timestamp = new Date(point.startTimeNanos / 1000000);
+            const hour = timestamp.getHours();
+            const minute = timestamp.getMinutes() - (timestamp.getMinutes() % 30);
+            const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            heartRates[timeKey].push(point.value[0].fpVal);
+        });
+        
+        // Calcular a média de frequência cardíaca para cada intervalo
+        Object.keys(heartRates).forEach(timeKey => {
+            const rates = heartRates[timeKey];
+            if (rates.length > 0) {
+                const averageRate = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+                heartRates[timeKey] = Math.round(averageRate); // Arredondando o valor
+            } else {
+                delete heartRates[timeKey]; // Removendo intervalos sem dados
+            }
+        });
+        
+        return heartRates;
     }
 
     getActivityName(activityType) {

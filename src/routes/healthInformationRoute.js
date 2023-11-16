@@ -13,4 +13,6 @@ router.get('/health/activity/:date', HealthInformationController.readActivityByD
 
 router.get('/health/heart-rate/:date', HealthInformationController.readHeartRateByDate);
 
+router.get('/health/:date', HealthInformationController.readAllHealthInformationByDate);
+
 module.exports = router;
