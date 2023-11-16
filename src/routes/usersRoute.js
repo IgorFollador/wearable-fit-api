@@ -3,13 +3,13 @@ const UserController = require('../controllers/UserController');
 
 const router = Router();
 
-router.get('/users', UserController.read);
-
-router.get('/users/:id', UserController.read);
-
 router.get('/users/recoverInformation', UserController.recoverUser);
 
 router.get('/users/clients', UserController.readAllClientsByProfessional);
+
+router.get('/users', UserController.read);
+
+router.get('/users/:id', UserController.readById);
 
 router.put('/users', UserController.update);
 
