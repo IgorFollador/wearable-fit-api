@@ -57,9 +57,14 @@ class UserController {
 
     static async read(req, res) {
         try {
-            // userId by auth
-            const userId = req.userId;
-            if (!userId) return res.sendStatus(401);
+            let userId;
+            if (req.userId) {
+                // userId by auth
+                userId = req.userId;
+                if (!userId) return res.sendStatus(401);
+            } else {
+                userId = req.params.id;
+            }
 
             const user = await database.User.findByPk(userId, {exclude: ['password']});
             if(user == null) return res.status(404).json({ message: 'User not found' });
@@ -68,7 +73,8 @@ class UserController {
                 id: user.id,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                email: user.email
+                email: user.email,
+                sex: user.sex
             }
 
             return res.status(200).json(responseData);

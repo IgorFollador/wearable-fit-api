@@ -5,6 +5,8 @@ const router = Router();
 
 router.get('/users', UserController.read);
 
+router.get('/users/:id', UserController.read);
+
 router.get('/users/recoverInformation', UserController.recoverUser);
 
 router.get('/users/clients', UserController.readAllClientsByProfessional);
