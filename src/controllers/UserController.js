@@ -77,7 +77,7 @@ class UserController {
                 sex: user.sex,
                 birthDate: user.birthDate
             }
-            console.log(responseData);
+
             return res.status(200).json(responseData);
         } catch (error) {
             return res.status(500).json({ message: error.message });
