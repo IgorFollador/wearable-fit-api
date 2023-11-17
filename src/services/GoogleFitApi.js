@@ -123,58 +123,13 @@ class GoogleFitApi {
     async getDailyStepCount(date) {
         const dataTypeName = 'com.google.step_count.delta';
         const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
-        return dataPoints.reduce((total, point) => total + point.value[0].intVal, 0);
+        return  dataPoints.reduce((total, point) => total + point.value[0].intVal, 0);
     }    
 
     async getDailyCaloriesBurned(date) {
         const dataTypeName = 'com.google.calories.expended';
         const dataPoints = await this.fetchDataByDataType(dataTypeName, date);
         return dataPoints.reduce((total, point) => total + point.value[0].fpVal, 0);
-    }
-
-    // TODO: Rever retorno
-    async getDailySleepDuration(date) {
-        const localDate = new Date(date);
-        localDate.setHours(0, 0, 0, 0);
-
-        // Início do intervalo de sono (18h do dia anterior)
-        const startDateTime = new Date(localDate);
-        startDateTime.setHours(-6, 0, 0, 0); // Retrocede 6 horas
-
-        // Fim do intervalo de sono (18h do dia solicitado)
-        const endDateTime = new Date(localDate);
-        endDateTime.setHours(18, 0, 0, 0); // Avança para 18h
-
-        const request = {
-            userId: 'me',
-            auth: this.oAuthClient,
-            resource: {
-                aggregateBy: [{ dataTypeName: 'com.google.activity.segment' }],
-                bucketByTime: { durationMillis: 86400000 }, // Agrupe por 24 horas
-                startTimeMillis: startDateTime.getTime(),
-                endTimeMillis: endDateTime.getTime()
-            }
-        };
-
-        try {
-            const response = await this.fitness.users.dataset.aggregate(request);
-            let totalSleepDuration = 0;
-    
-            if (response.data && response.data.bucket && response.data.bucket.length > 0) {
-                const sleepDataPoints = response.data.bucket[0].dataset[0].point;
-                sleepDataPoints.forEach((point) => {
-
-                    // Procurando por códigos de atividade de sono (72 ou 109)
-                    if (point.value.some(val => val.intVal === 72 || val.intVal === 109)) {
-                        totalSleepDuration += (point.endTimeNanos - point.startTimeNanos) / (1e9 * 3600); // Convertendo de nanossegundos para horas
-                    }
-                });
-            }
-            return totalSleepDuration;
-        } catch (error) {
-            console.error(`Erro ao recuperar dados de sono:`, error);
-            throw error;
-        }
     }
 
     async getDailyPhysicalActivityDuration(date) {
@@ -230,6 +185,55 @@ class GoogleFitApi {
         return heartRates;
     }
 
+    async getDailySleepDuration(date) {
+        // Filtro da data as 12pm até as 12pm do outro dia
+        date.setHours(12, 0, 0, 0);
+        const startTime = date.getTime();
+        const endTime = startTime + 86400000 ; // Fim do mesmo dia + 24h
+        let totalSleepDuration = 0;
+
+        try {
+            const sessionsResponse = await this.fitness.users.sessions.list({
+                userId: 'me',
+                auth: this.oAuthClient,
+                startTime: new Date(startTime).toISOString(),
+                endTime: new Date(endTime).toISOString(),
+                activityType: 72 // Tipo de atividade para sono
+            });
+            
+            if (!sessionsResponse.data.session || sessionsResponse.data.session.length === 0) {
+                console.log("Nenhuma sessão de sono encontrada para o dia.");
+                return 0;
+            }
+
+            const aggregateResponse = await this.fitness.users.dataset.aggregate({
+                userId: 'me',
+                auth: this.oAuthClient,
+                resource: {
+                    aggregateBy: [
+                        {
+                            dataTypeName: 'com.google.sleep.segment'
+                        }     
+                    ],
+                    endTimeMillis: sessionsResponse.data.session[0].endTimeMillis,
+                    startTimeMillis: sessionsResponse.data.session[0].startTimeMillis
+                }
+            });
+
+            if (!aggregateResponse.data.bucket || aggregateResponse.data.bucket.length === 0) {
+                console.log("Nenhum bucket de sono encontrada para o dia.");
+                return 0;
+            }
+
+            totalSleepDuration = (aggregateResponse.data.bucket[0].endTimeMillis - aggregateResponse.data.bucket[0].startTimeMillis) / 3600000; // converte em horas
+
+            return totalSleepDuration > 0 ? totalSleepDuration : 0;
+        } catch (error) {
+            console.error('Erro ao recuperar dados de sono:', error);
+            throw error;
+        }
+    }    
+    
     getActivityName(activityType) {
         const activityMap = {
           0: 'No atividade',

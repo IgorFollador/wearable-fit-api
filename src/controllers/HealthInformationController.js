@@ -6,7 +6,8 @@ class HealthInformationController {
     static async readStepsByDate(req, res) {
         try {
             const userId = req.userId;
-            const date = req.params.date;
+            const date = new Date(req.params.date);
+            date.setDate(date.getDate() + 1);
             
             const userGoogleAccount = await database.GoogleUser.findOne({
                 where: {
@@ -22,7 +23,7 @@ class HealthInformationController {
                 refreshToken: userGoogleAccount.refreshToken
             });
 
-            const healthData = await googleFitApi.getDailyStepCount(new Date(date));
+            const healthData = await googleFitApi.getDailyStepCount(date);
 
             return res.status(200).json(healthData);
         } catch (error) {
@@ -33,7 +34,10 @@ class HealthInformationController {
     static async readCaloriesByDate(req, res) {
         try {
             const userId = req.userId;
-            const date = req.params.date;
+            const date = new Date(req.params.date);
+            date.setDate(date.getDate() + 1);
+            
+            console.log(date);
 
             const userGoogleAccount = await database.GoogleUser.findOne({
                 where: {
@@ -50,7 +54,7 @@ class HealthInformationController {
             });
 
 
-            const healthData = await googleFitApi.getDailyCaloriesBurned(new Date(date));
+            const healthData = await googleFitApi.getDailyCaloriesBurned(date);
 
             return res.status(200).json(healthData);
         } catch (error) {
@@ -61,7 +65,8 @@ class HealthInformationController {
     static async readSleepByDate(req, res) {
         try {
             const userId = req.userId;
-            const date = req.params.date;
+            const date = new Date(req.params.date);
+            date.setDate(date.getDate() + 1);
 
             const userGoogleAccount = await database.GoogleUser.findOne({
                 where: {
@@ -88,7 +93,8 @@ class HealthInformationController {
     static async readActivityByDate(req, res) {
         try {
             const userId = req.userId;
-            const date = req.params.date;
+            const date = new Date(req.params.date);
+            date.setDate(date.getDate() + 1);
 
             const userGoogleAccount = await database.GoogleUser.findOne({
                 where: {
@@ -104,7 +110,7 @@ class HealthInformationController {
                 refreshToken: userGoogleAccount.refreshToken
             });
 
-            const healthData = await googleFitApi.getDailyPhysicalActivityDuration(new Date(date));
+            const healthData = await googleFitApi.getDailyPhysicalActivityDuration(date);
 
             return res.status(200).json(healthData);
         } catch (error) {
@@ -115,7 +121,8 @@ class HealthInformationController {
     static async readHeartRateByDate(req, res) {
         try {
             const userId = req.userId;
-            const date = req.params.date;
+            const date = new Date(req.params.date);
+            date.setDate(date.getDate() + 1);
 
             const userGoogleAccount = await database.GoogleUser.findOne({
                 where: {
@@ -131,7 +138,7 @@ class HealthInformationController {
                 refreshToken: userGoogleAccount.refreshToken
             });
 
-            const healthData = await googleFitApi.getDailyHeartRate(new Date(date));
+            const healthData = await googleFitApi.getDailyHeartRate(date);
 
             return res.status(200).json(healthData);
         } catch (error) {
@@ -143,6 +150,7 @@ class HealthInformationController {
         try {
             const userId = req.userId;
             const date = new Date(req.params.date);
+            date.setDate(date.getDate() + 1);
     
             const userGoogleAccount = await database.GoogleUser.findOne({
                 where: {
@@ -171,7 +179,7 @@ class HealthInformationController {
                     goal: 5000 // Este valor pode vir de algum lugar específico
                 },
                 caloriesBurned: {
-                    current: caloriesBurned,
+                    current:  Math.round(caloriesBurned),
                     goal: 2500 // Este valor pode vir de algum lugar específico
                 },
                 sleepDuration: {
@@ -186,9 +194,6 @@ class HealthInformationController {
             return res.status(500).json({ message: error.message });
         }
     }
-
-    // TODO: blood-preassure, blood-glucose, body-temperature
-
 }
 
 module.exports = HealthInformationController;
