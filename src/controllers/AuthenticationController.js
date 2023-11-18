@@ -46,8 +46,8 @@ const Dates = require('../services/Dates');
 
     static async authorizateGoogleUser(req, res) {
         try {
-            const authUrl = await (new GoogleFitApi()).getAuthUrl(req.userId);
-            return res.status(200).json(authUrl);
+            const authUrl = await (new GoogleFitApi()).getAuthUrl();
+            return res.status(200).json({url: authUrl});
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
@@ -57,16 +57,19 @@ const Dates = require('../services/Dates');
         try {
             const googleFitApi = new GoogleFitApi();
             const authorizationCode = req.query.code;
+            
+            console.log(req.userId, authorizationCode);
+            
             const tokens = await googleFitApi.getToken(authorizationCode)
             googleFitApi.setTokens({
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token
             });
 
+
             // Save tokens into database
-            // TODO: save tokens to user logged
             const googleUser = await database.GoogleUser.create({
-                userId: 2,
+                userId: req.userId,
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token,
                 scope: tokens.scope,

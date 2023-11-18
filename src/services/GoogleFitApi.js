@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
 
 class GoogleFitApi {
-    constructor(redirectUrl = `${process.env.HOST}/google/authCallback`) {
+    constructor(redirectUrl = `http://localhost:3000/api/google/callback`) {
         this.fitness = google.fitness('v1');
 
         this.oAuthClient = new google.auth.OAuth2(
