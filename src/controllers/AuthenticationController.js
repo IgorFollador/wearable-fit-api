@@ -46,30 +46,26 @@ const Dates = require('../services/Dates');
 
     static async authorizateGoogleUser(req, res) {
         try {
-            const authUrl = await (new GoogleFitApi()).getAuthUrl();
+            const host = req.query.host || null;
+            console.log(host)
+            const authUrl = await (new GoogleFitApi()).getAuthUrl(host);
             return res.status(200).json({url: authUrl});
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
     }
 
-    static async authCallback(req, res) {
+    static async getGoogleTokens(req, res) {
         try {
-            const googleFitApi = new GoogleFitApi();
             const authorizationCode = req.query.code;
+            const userId = req.userId;
+            if (authorizationCode === null) return res.status(404).json({ message: "Code is required." });
             
-            console.log(req.userId, authorizationCode);
-            
-            const tokens = await googleFitApi.getToken(authorizationCode)
-            googleFitApi.setTokens({
-                accessToken: tokens.access_token,
-                refreshToken: tokens.refresh_token
-            });
-
+            const tokens = await (new GoogleFitApi()).getToken(authorizationCode)
 
             // Save tokens into database
             const googleUser = await database.GoogleUser.create({
-                userId: req.userId,
+                userId: userId,
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token,
                 scope: tokens.scope,

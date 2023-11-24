@@ -2,6 +2,7 @@
 const { Router } = require('express');
 
 const publicRouter = require('./publicRoutes');
+const authRouter = require('./authRoutes');
 const usersRouter = require('./usersRoute');
 const notificationsRouter = require('./notificationsRoute');
 const healthGoalsRouter = require('./healthGoalsRoute');
@@ -18,6 +19,8 @@ v1.use(publicRouter);
 v1.use(AuthenticationController.authorize)
 
 // Authenticated routes
+v1.use(authRouter);
+
 v1.use(usersRouter);
 
 v1.use(notificationsRouter);

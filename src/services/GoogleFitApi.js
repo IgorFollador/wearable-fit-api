@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
 
 class GoogleFitApi {
-    constructor(redirectUrl = `${process.env.HOST}/google/authCallback`) {
+    constructor(redirectUrl = `${process.env.HOST}/google/callback`) {
         this.fitness = google.fitness('v1');
 
         this.oAuthClient = new google.auth.OAuth2(
@@ -43,7 +43,17 @@ class GoogleFitApi {
         });
     }
 
-    async getAuthUrl() {
+    async getAuthUrl(host = null) {
+        if (host === null) {
+            host = process.env.HOST;
+        }
+
+        this.oAuthClient = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            `${host}/google/callback`
+        );
+
         return this.oAuthClient.generateAuthUrl({
             access_type: 'offline',
             scope: this.scopes

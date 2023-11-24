@@ -3,8 +3,6 @@ const AuthenticationController = require('../controllers/AuthenticationControlle
 
 const router = Router();
 
-router.get('/google/authUrlCallback', AuthenticationController.callbackGoogle);
-
-router.get('/google', AuthenticationController.authorizateGoogleUser);
+router.get('/google/authorization', AuthenticationController.getGoogleTokens);
 
 module.exports = router;
