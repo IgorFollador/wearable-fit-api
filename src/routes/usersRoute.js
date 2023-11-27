@@ -7,9 +7,11 @@ router.get('/users/recoverInformation', UserController.recoverUser);
 
 router.get('/users/clients', UserController.readAllClientsByProfessional);
 
-router.get('/users', UserController.read);
+router.get('/users/settings', UserController.readSettings);
 
 router.get('/users/:id', UserController.readById);
+
+router.get('/users', UserController.read);
 
 router.put('/users', UserController.update);
 

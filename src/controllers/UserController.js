@@ -100,6 +100,37 @@ class UserController {
         }
     }
 
+    static async readSettings(req, res) {
+        try {
+            const userId = req.userId;
+
+            console.log(userId);
+
+            const user = await database.User.findByPk(userId, {exclude: ['password']});
+            if(user == null) return res.status(404).json({ 
+                isConfigured: false,  
+                message: 'User not found' 
+            });
+
+            const userGoogleAccount = await database.GoogleUser.findOne({
+                where: {
+                    userId: userId
+                }
+            });
+            if (userGoogleAccount === null) return res.status(404).json({ 
+                isConfigured: false, 
+                message: "The user is not connected to Google FIT" 
+            });
+
+            return res.status(200).json({ 
+                isConfigured: true, 
+                message: "User configured" 
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
     static async readAllClientsByProfessional(req, res) {
         try {
             const professionalId = req.userId;

@@ -58,10 +58,12 @@ const Dates = require('../services/Dates');
     static async getGoogleTokens(req, res) {
         try {
             const authorizationCode = req.query.code;
+            const host = req.query.host || null;
             const userId = req.userId;
             if (authorizationCode === null) return res.status(404).json({ message: "Code is required." });
             
-            const tokens = await (new GoogleFitApi()).getToken(authorizationCode)
+            const googleFitApi = new GoogleFitApi(host);
+            const tokens = await googleFitApi.getToken(authorizationCode);
 
             // Save tokens into database
             const googleUser = await database.GoogleUser.create({
