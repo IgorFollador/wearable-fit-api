@@ -171,20 +171,29 @@ class HealthInformationController {
             const caloriesBurned = await googleFitApi.getDailyCaloriesBurned(date);
             const sleepDuration = await googleFitApi.getDailySleepDuration(date);
             const heartRateData = await googleFitApi.getDailyHeartRate(date);
+
+            let healthGoal = await database.HealthGoal.findOne({ where: { clientUserId: userId } } );
+            if (!healthGoal) {
+                healthGoal = {
+                    stepGoal: 5000,
+                    calorieGoal: 2500,
+                    sleepTime: 8
+                }
+            }
     
             // Construir objeto de resposta
             const healthData = {
                 steps: {
                     current: steps,
-                    goal: 5000 // Este valor pode vir de algum lugar específico
+                    goal: healthGoal.stepGoal // Este valor pode vir de algum lugar específico
                 },
                 caloriesBurned: {
                     current:  Math.round(caloriesBurned),
-                    goal: 2500 // Este valor pode vir de algum lugar específico
+                    goal: healthGoal.calorieGoal // Este valor pode vir de algum lugar específico
                 },
                 sleepDuration: {
                     current: sleepDuration,
-                    goal: 8 // Este valor pode vir de algum lugar específico
+                    goal: healthGoal.sleepTime // Este valor pode vir de algum lugar específico
                 },
                 heartRateData // Dados de frequência cardíaca para o gráfico Line
             };
