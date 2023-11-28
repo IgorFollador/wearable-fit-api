@@ -65,17 +65,29 @@ const Dates = require('../services/Dates');
             const googleFitApi = new GoogleFitApi(host);
             const tokens = await googleFitApi.getToken(authorizationCode);
 
-            // Save tokens into database
-            const googleUser = await database.GoogleUser.create({
+            const selectedGoogleUser = await database.GoogleUser.findOne({where: { userId: userId }});
+
+            const tokensForm = {
                 userId: userId,
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token,
                 scope: tokens.scope,
                 tokentType: tokens.token_type,
                 expiryDate: Dates.formatTimestampForMySQL(tokens.expiry_date)
-            });
+            }
 
-            return res.status(200).json(googleUser);
+            if (selectedGoogleUser) {
+                await database.GoogleUser.update(tokensForm, {
+                    where: {
+                        id: Number(notificationId)
+                    }
+                })
+            } else {
+                // Save tokens into database
+                await database.GoogleUser.create(tokensForm);
+            }
+
+            return res.status(200).json({ message: "Tokens saved, user authorized!"});
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }

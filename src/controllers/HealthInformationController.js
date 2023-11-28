@@ -148,8 +148,8 @@ class HealthInformationController {
 
     static async readAllHealthInformationByDate(req, res) {
         try {
-            const userId = req.userId;
-            const date = new Date(req.params.date);
+            const userId = req.body.userId == "me" | req.body.userId == null ? req.userId : req.body.userId;
+            const date = new Date(req.body.date);
             date.setDate(date.getDate() + 1);
     
             const userGoogleAccount = await database.GoogleUser.findOne({
