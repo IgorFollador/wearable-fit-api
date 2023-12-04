@@ -16,8 +16,7 @@ class NotificationController {
 
     static async read(req, res) {
         try {
-            // userId by auth
-            const userId = req.userId;
+            const userId = req.params.id == null ? req.userId : req.params.id;
             if (!userId) return res.sendStatus(401);
 
             const notifications = await database.Notification.findAll({
