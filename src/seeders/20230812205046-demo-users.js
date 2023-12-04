@@ -261,7 +261,7 @@ module.exports = {
         sex: 'm',
         birthDate: new Date('1984-09-22'),
         isProfessional: true,
-        professionalId: 1,
+        professionalId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -273,7 +273,7 @@ module.exports = {
         sex: 'f',
         birthDate: new Date('1978-03-03'),
         isProfessional: true,
-        professionalId: 1,
+        professionalId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }

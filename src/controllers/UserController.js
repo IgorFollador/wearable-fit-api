@@ -91,7 +91,8 @@ class UserController {
                 lastName: user.lastName,
                 email: user.email,
                 sex: user.sex,
-                birthDate: user.birthDate
+                birthDate: user.birthDate,
+                binded: user.professionalId == req.userId
             }
 
             return res.status(200).json(responseData);
