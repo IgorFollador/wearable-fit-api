@@ -19,12 +19,66 @@ class HealthGoalController {
         }
     }
 
+    static async createOrUpdate(req, res) {
+        try {
+            const professionalUserId = req.userId;
+            const clientUserId = req.params.id;
+            req.body.professionalUserId = professionalUserId;
+            req.body.clientUserId = clientUserId;
+
+            const healthGoalForm = req.body;
+            
+            const clientUser = await database.User.findByPk(healthGoalForm.clientUserId);
+            if (!clientUser === null) return res.status(404).json({ message: 'Client not found' });
+
+            const healthGoalSelected = await database.HealthGoal.findOne({
+                where: {
+                    clientUserId: Number(clientUserId)
+                }
+            });
+
+            if (healthGoalSelected) {
+                await database.HealthGoal.update(healthGoalForm, {
+                    where: {
+                        clientUserId: Number(clientUserId)
+                    }
+                })
+
+                return res.status(200).json("Health Goals updated");
+            } 
+                
+            const healthGoal = await database.HealthGoal.create(healthGoalForm);
+            
+            return res.status(201).json(healthGoal);
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
     static async readById(req, res) {
         try {
             const { id } = req.params;
 
             const healthGoal = await database.HealthGoal.findByPk(id);
             if(healthGoal === null) return res.status(404).json({ message: 'Health Goal not found' });
+
+            return res.status(200).json(healthGoal);
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    static async readByUser(req, res) {
+        try {
+            const userId = req.params.id == null ? req.userId : req.params.id;
+
+            const healthGoal = await database.HealthGoal.findOne({
+                where: {
+                    clientUserId: userId
+                }
+            });
+
+            if (healthGoal === null) return res.status(404).json({ message: 'No Health Goal found' });
 
             return res.status(200).json(healthGoal);
         } catch (error) {
