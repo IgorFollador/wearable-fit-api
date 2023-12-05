@@ -9,4 +9,6 @@ router.get('/auth/google', AuthenticationController.authorizateGoogleUser);
 
 router.post('/users', UserController.create);
 
+router.post('/users/validate-email', UserController.validateEmailRegistration);
+
 module.exports = router;

@@ -3,6 +3,7 @@ const UserController = require('../controllers/UserController');
 
 const router = Router();
 
+
 router.get('/users/recoverInformation', UserController.recoverUser);
 
 router.get('/users/clients', UserController.readAllClientsByProfessional);
@@ -16,6 +17,8 @@ router.get('/users', UserController.read);
 router.put('/users', UserController.update);
 
 router.put('/users/associate/client/:id', UserController.associateClientToProfessional);
+
+router.put('/users/disassociate/client/:id', UserController.disassociateClientToProfessional);
 
 router.put('/users/recover/:id', UserController.recover);
 

@@ -5,6 +5,9 @@ const userSchema = joi.object({
         .min(3)
         .max(30)
         .required(),
+
+    isProfessional: joi.boolean()
+        .default(false),
     
     lastName: joi.string()
         .min(3)

@@ -222,6 +222,32 @@ class UserController {
         }
     }
 
+    static async disassociateClientToProfessional(req, res) {
+        try {
+            const professionalId = req.userId;
+            const clientId = req.params.id;
+
+            const user = await database.User.findByPk(professionalId, {exclude: ['password']});
+            if(user == null) return res.status(404).json({ message: 'Professional not found' });
+            
+            // Only professionals have access to yout clients
+            if(!user.isProfessional) return res.status(401).json({ message: 'The logged in user does not have permission to access this feature' });
+
+            const client = await database.User.findByPk(clientId, {exclude: ['password']});
+            if(client == null) return res.status(404).json({ message: 'User not found' });
+
+            await database.User.update({professionalId: null}, {
+                where: {
+                    id: Number(clientId)
+                }
+            })
+
+            return res.status(200).json({ message: `User with ID ${clientId} disassociate to professional with ID ${professionalId}` })
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
     static async delete(req, res) {
         try {
             const { id } = req.params;
@@ -255,6 +281,25 @@ class UserController {
             });
 
             return res.status(200).json({ message: `User with ID ${id} has been recovered` });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    static async validateEmailRegistration(req, res) {
+        try {
+            const email = req.body.email;
+
+            const user = await database.User.findOne({ 
+                where: {
+                    email: email
+                }, 
+                paranoid: false 
+            });
+
+            if(user === null) return res.status(200).json({ validated: true, message: 'Valid email for registration'})
+
+            return res.status(200).json({ validated: false, message: 'Invalid email for registration, try again'})
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
