@@ -3,6 +3,6 @@ const AuthenticationController = require('../controllers/AuthenticationControlle
 
 const router = Router();
 
-router.get('/google/authorization', AuthenticationController.getGoogleTokens);
+// router.get('/google/authorization', AuthenticationController.getGoogleTokens);
 
 module.exports = router;

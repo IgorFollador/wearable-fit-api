@@ -7,6 +7,8 @@ router.post('/auth', AuthenticationController.authenticate);
 
 router.get('/auth/google', AuthenticationController.authorizateGoogleUser);
 
+router.get('/google/authorization', AuthenticationController.getGoogleTokens);
+
 router.post('/users', UserController.create);
 
 router.post('/users/validate-email', UserController.validateEmailRegistration);

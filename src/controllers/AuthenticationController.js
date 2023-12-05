@@ -59,7 +59,7 @@ const Dates = require('../services/Dates');
         try {
             const authorizationCode = req.query.code;
             const host = req.query.host || null;
-            const userId = req.userId;
+            const userId = req.userId || 2;
             if (authorizationCode === null) return res.status(404).json({ message: "Code is required." });
             
             const googleFitApi = new GoogleFitApi(host);
